@@ -14,10 +14,25 @@ BANDS = [
 ]
 
 @app.get('/bands') 
-async def bands() -> list[Band]:
-    return [
-        Band(**b) for b in BANDS # ** is like the spread operator (...) in JS. But can only be used on a dictionary. * is used for lists.
-    ]
+async def bands(genre: GenreURLChoices | None = None,
+                has_albums: bool = False
+                ) -> list[Band]: #sets type as GenreURLChoices or None, then sets the default value to None
+                    band_list = [Band(**b) for b in BANDS]
+
+                    if genre:
+                        band_list = [
+                            b for b in band_list if b.genre.lower() == genre.value  #genre.value retrieves the string value of the selected genre Enum member
+                        ]
+
+
+                    if has_albums:
+                        band_list = [b for b in band_list if len(b.albums) > 0]
+
+                    return band_list
+
+    # return [
+    #     Band(**b) for b in BANDS # ** is like the spread operator (...) in JS. But can only be used on a dictionary. * is used for lists.
+    # ]
 
 @app.get('/bands/{band_id}', status_code = 206)
 async def band(band_id: int) -> Band:
@@ -27,9 +42,9 @@ async def band(band_id: int) -> Band:
         raise HTTPException(status_code=404, detail='Band not found')
     return band
 
-@app.get('/bands/genre/{genre}')
-async def bands_for_genre(genre: GenreURLChoices) -> list[dict]: #parameter type hints use : and return type hints use ->
-    print(genre.value)
-    return [
-        b for b in BANDS if b['genre'].lower() == genre.value #genre.value retrieves the string value of the selected genre Enum member
-    ]
+# @app.get('/bands/genre/{genre}')
+# async def bands_for_genre(genre: GenreURLChoices) -> list[dict]: #parameter type hints use : and return type hints use ->
+#     print(genre.value)
+#     return [
+#         b for b in BANDS if b['genre'].lower() == genre.value #genre.value retrieves the string value of the selected genre Enum member
+#     ]
