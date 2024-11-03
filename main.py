@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from schemas import GenreURLChoices, Band
+from schemas import GenreURLChoices, BandBase, BandCreate, BandWithID
 
 app = FastAPI()
 
@@ -16,12 +16,12 @@ BANDS = [
 @app.get('/bands') 
 async def bands(genre: GenreURLChoices | None = None,
                 has_albums: bool = False
-                ) -> list[Band]: #sets type as GenreURLChoices or None, then sets the default value to None
-                    band_list = [Band(**b) for b in BANDS]
+                ) -> list[BandWithID]: #sets type as GenreURLChoices or None, then sets the default value to None
+                    band_list = [BandWithID(**b) for b in BANDS]
 
                     if genre:
                         band_list = [
-                            b for b in band_list if b.genre.lower() == genre.value  #genre.value retrieves the string value of the selected genre Enum member
+                            b for b in band_list if b.genre.value.lower() == genre.value  #genre.value retrieves the string value of the selected genre Enum member
                         ]
 
 
@@ -35,8 +35,8 @@ async def bands(genre: GenreURLChoices | None = None,
     # ]
 
 @app.get('/bands/{band_id}', status_code = 206)
-async def band(band_id: int) -> Band:
-    band = next((Band(**b) for b in BANDS if b['id'] == band_id), None)
+async def band(band_id: int) -> BandWithID:
+    band = next((BandWithID(**b) for b in BANDS if b['id'] == band_id), None)
     if band is None:
         # status code 404
         raise HTTPException(status_code=404, detail='Band not found')
@@ -48,3 +48,13 @@ async def band(band_id: int) -> Band:
 #     return [
 #         b for b in BANDS if b['genre'].lower() == genre.value #genre.value retrieves the string value of the selected genre Enum member
 #     ]
+
+
+
+
+@app.post('/bands')
+async def create_band(band_data: BandCreate) -> BandWithID:
+       id = BANDS[-1]['id'] + 1
+       band = BandWithID(id=id, **band_data.model_dump()).model_dump()
+       BANDS.append(band)
+       return band
